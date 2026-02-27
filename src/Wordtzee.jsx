@@ -306,6 +306,50 @@ function ConfirmModal({message,onConfirm,onCancel}){
   return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20}}><div style={{background:"linear-gradient(145deg, #1e2248, #252a52)",borderRadius:16,padding:24,maxWidth:360,width:"100%",border:"1px solid rgba(232,115,74,0.2)",boxShadow:"0 12px 40px rgba(0,0,0,0.5)"}}><div style={{fontSize:14,color:T.text,marginBottom:20,lineHeight:1.6}}>{message}</div><div style={{display:"flex",gap:10}}><button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:10,border:`1px solid ${T.textFaint}`,background:"transparent",color:T.text,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer"}}>Cancel</button><button onClick={onConfirm} style={{flex:1,padding:"10px",borderRadius:10,border:"none",background:T.accentGrad,color:"#fff",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer"}}>Confirm</button></div></div></div>);
 }
 
+function InstructionsModal({onClose}){
+  const sectionStyle={marginBottom:16};
+  const headingStyle={fontSize:14,fontWeight:700,color:T.accent,marginBottom:4,fontFamily:"'Righteous',cursive",letterSpacing:1};
+  const textStyle={fontSize:12,color:T.text,lineHeight:1.6,margin:0};
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1100,padding:16}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"linear-gradient(145deg, #1e2248, #252a52)",borderRadius:16,padding:"24px 20px",maxWidth:400,width:"100%",border:"1px solid rgba(232,115,74,0.2)",boxShadow:"0 12px 40px rgba(0,0,0,0.5)",maxHeight:"85vh",display:"flex",flexDirection:"column"}}>
+        <h2 style={{fontFamily:"'Righteous',cursive",fontSize:24,background:"linear-gradient(135deg, #e8734a, #f0c040)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",margin:"0 0 16px",textAlign:"center",letterSpacing:2}}>HOW TO PLAY</h2>
+        <div style={{overflowY:"auto",flex:1,paddingRight:4}}>
+          <div style={sectionStyle}>
+            <div style={headingStyle}>Goal</div>
+            <p style={textStyle}>Fill all 13 scoring categories to maximize your total score. Each category can only be used once!</p>
+          </div>
+          <div style={sectionStyle}>
+            <div style={headingStyle}>Rolling</div>
+            <p style={textStyle}>Roll 7 letter dice each turn. You get up to 2 rerolls — keep the letters you like before each reroll.</p>
+          </div>
+          <div style={sectionStyle}>
+            <div style={headingStyle}>Keeping Letters</div>
+            <p style={textStyle}>Tap dice to move them to your keep line. Drag to reorder your kept letters and spell a word.</p>
+          </div>
+          <div style={sectionStyle}>
+            <div style={headingStyle}>Scoring</div>
+            <p style={textStyle}>Check your word, then pick an eligible category to score it in. If nothing fits, you can scratch a category for 0 points.</p>
+          </div>
+          <div style={sectionStyle}>
+            <div style={headingStyle}>Upper Section</div>
+            <p style={textStyle}>Categories based on word length (3-letter, 4-letter, etc.) with length bonuses for longer words. Score 50+ points in the upper section to earn a +25 bonus!</p>
+          </div>
+          <div style={sectionStyle}>
+            <div style={headingStyle}>Lower Section</div>
+            <p style={textStyle}>Special categories like Noun, Verb, Palindrome, Rare Letter Word, and more. Each has unique scoring rules.</p>
+          </div>
+          <div style={sectionStyle}>
+            <div style={headingStyle}>Letter Values</div>
+            <p style={textStyle}>Common letters (E, A, R, S…) = 1 pt. Less common letters score more. Rare letters (J, X, Qu, Z) = 8–10 pts each!</p>
+          </div>
+        </div>
+        <button onClick={onClose} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:T.accentGrad,color:"#fff",fontFamily:"'Righteous',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",marginTop:16,boxShadow:`0 4px 16px ${T.accentGlow}`}}>Got It!</button>
+      </div>
+    </div>
+  );
+}
+
 // Die component
 function Die({die,isKept,onClick,onDragStart,size=52}){
   const fs=die.letter==="Qu"?size*0.3:size*0.38;
@@ -750,6 +794,27 @@ const ANIM_CSS = `
   60% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(1); }
 }
+@media (min-width: 900px) {
+  .wz-game-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .wz-roll-arena {
+    flex: 1;
+    min-width: 0;
+  }
+  .wz-scorecard-panel {
+    width: 340px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+  .wz-scorecard-toggle { display: none !important; }
+}
 `;
 
 function ConfettiOverlay(){
@@ -813,9 +878,10 @@ export default function Wordtzee(){
   const[eligible,setEligible]=useState({});
   const[message,setMessage]=useState("");
   const[hasRolled,setHasRolled]=useState(false);
-  const[showScorecard,setShowScorecard]=useState(false);
+  const[showScorecard,setShowScorecard]=useState(true);
   const[confirmModal,setConfirmModal]=useState(null);
   const[showMenu,setShowMenu]=useState(false);
+  const[showInstructions,setShowInstructions]=useState(false);
   const[incomingDrag,setIncomingDrag]=useState(null);
   const[rollPhase,setRollPhase]=useState("settled"); // cupping, scattering, settled
   const[scorePop,setScorePop]=useState(null);
@@ -839,6 +905,22 @@ export default function Wordtzee(){
       setValidationResult(null);setEligible({});setMessage("");
     }
   },[keepLineWord,twoForOneMode]);
+
+  useEffect(()=>{
+    if(!localStorage.getItem("wordtzee-seen-instructions")){
+      setShowInstructions(true);
+      localStorage.setItem("wordtzee-seen-instructions","1");
+    }
+  },[]);
+
+  // Force scorecard visible on desktop-width viewports
+  useEffect(()=>{
+    const mq=window.matchMedia("(min-width: 900px)");
+    const handler=(e)=>{if(e.matches)setShowScorecard(true);};
+    mq.addEventListener("change",handler);
+    if(mq.matches)setShowScorecard(true);
+    return()=>mq.removeEventListener("change",handler);
+  },[]);
 
   function getPlayerScore(pIdx){
     const s=allScores[pIdx]||{};
@@ -1013,7 +1095,10 @@ export default function Wordtzee(){
         <p style={{fontSize:14,color:T.textDim,marginBottom:40,maxWidth:300,animation:"slideUp 0.7s ease-out"}}>A word-building dice game</p>
         <button onClick={()=>setPhase("setup")} style={{padding:"16px 52px",borderRadius:16,border:"none",background:T.accentGrad,color:"#fff",fontFamily:"'Righteous',cursive",fontSize:24,letterSpacing:3,cursor:"pointer",boxShadow:`0 4px 24px ${T.accentGlow}`,marginBottom:16,animation:"bounceIn 0.6s 0.3s ease-out both",transition:"transform 0.15s"}}
           onMouseEnter={e=>e.target.style.transform="scale(1.05)"} onMouseLeave={e=>e.target.style.transform="scale(1)"}>NEW GAME</button>
+        <button onClick={()=>setShowInstructions(true)} style={{padding:"10px 36px",borderRadius:12,border:`1px solid ${T.textFaint}`,background:"transparent",color:T.textDim,fontFamily:"'Outfit',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:16,animation:"slideUp 0.8s ease-out",transition:"all 0.15s",letterSpacing:1}}
+          onMouseEnter={e=>{e.target.style.color=T.accent;e.target.style.borderColor=T.accent;}} onMouseLeave={e=>{e.target.style.color=T.textDim;e.target.style.borderColor=T.textFaint;}}>How to Play</button>
         <div style={{fontSize:11,color:T.textDim,maxWidth:280,lineHeight:1.6,marginTop:8,animation:"slideUp 0.9s ease-out"}}>Roll 7 letter dice, keep and reorder to form words, fill 13 scoring categories.</div>
+        {showInstructions&&<InstructionsModal onClose={()=>setShowInstructions(false)}/>}
       </div>
     );
   }
@@ -1131,6 +1216,7 @@ export default function Wordtzee(){
       <div ref={topRef}/>
       <style>{ANIM_CSS}</style>
       {confirmModal&&<ConfirmModal {...confirmModal}/>}
+      {showInstructions&&<InstructionsModal onClose={()=>setShowInstructions(false)}/>}
       {confetti&&<ConfettiOverlay/>}
       {scorePop!==null&&<ScorePopAnimation score={scorePop} onDone={()=>setScorePop(null)}/>}
 
@@ -1140,6 +1226,7 @@ export default function Wordtzee(){
           <div style={{background:"linear-gradient(145deg, #1e2248, #252a52)",borderRadius:16,padding:24,maxWidth:320,width:"100%",border:"1px solid rgba(232,115,74,0.2)"}}>
             <h3 style={{fontFamily:"'Righteous',cursive",fontSize:22,color:T.accent,margin:"0 0 20px",textAlign:"center"}}>PAUSED</h3>
             <button onClick={()=>setShowMenu(false)} style={{width:"100%",padding:"12px",borderRadius:10,border:"none",background:T.accentGrad,color:"#fff",fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:8}}>Resume Game</button>
+            <button onClick={()=>{setShowMenu(false);setShowInstructions(true);}} style={{width:"100%",padding:"12px",borderRadius:10,border:`1px solid ${T.textFaint}`,background:"transparent",color:T.text,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:8}}>How to Play</button>
             <button onClick={()=>{setShowMenu(false);setPhase("setup");}} style={{width:"100%",padding:"12px",borderRadius:10,border:`1px solid ${T.textFaint}`,background:"transparent",color:T.text,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:8}}>New Game</button>
             <button onClick={quitToMenu} style={{width:"100%",padding:"12px",borderRadius:10,border:`1px solid ${T.danger}40`,background:"transparent",color:T.danger,fontFamily:"'Outfit',sans-serif",fontSize:14,fontWeight:600,cursor:"pointer"}}>Quit to Menu</button>
           </div>
@@ -1181,6 +1268,9 @@ export default function Wordtzee(){
         </div>
       )}
 
+      {/* Game Layout — side-by-side on desktop */}
+      <div className="wz-game-layout">
+      <div className="wz-roll-arena">
       {/* Round & Rolls */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
         <div style={{fontSize:12,fontWeight:600}}>Round <span style={{color:T.accent}}>{round}</span><span style={{color:T.textFaint}}>/{TOTAL_ROUNDS}</span></div>
@@ -1277,15 +1367,16 @@ export default function Wordtzee(){
         {message&&<div style={{marginTop:7,fontSize:12,color:T.medium,fontWeight:500}}>{message}</div>}
         {validationResult&&Object.keys(eligible).length>0&&(<div style={{marginTop:7,fontSize:11,color:T.success,animation:"slideUp 0.3s ease-out"}}>✓ "{validationResult.word}" is valid!{validationResult.pos.length>0&&` (${validationResult.pos.join(", ")})`} — pick a category:</div>)}
       </div>}
+      </div>{/* end wz-roll-arena */}
 
       {/* Scorecard Toggle */}
-      <button onClick={()=>setShowScorecard(!showScorecard)} style={{width:"100%",padding:"10px",borderRadius:12,border:`1px solid ${T.accent}20`,background:"rgba(255,255,255,0.015)",color:T.accent,fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:8,letterSpacing:2,textTransform:"uppercase"}}>
+      <button className="wz-scorecard-toggle" onClick={()=>setShowScorecard(!showScorecard)} style={{width:"100%",padding:"10px",borderRadius:12,border:`1px solid ${T.accent}20`,background:"rgba(255,255,255,0.015)",color:T.accent,fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:700,cursor:"pointer",marginBottom:8,letterSpacing:2,textTransform:"uppercase"}}>
         {showScorecard?"▲ Hide Scorecard":"▼ Show Scorecard"}
       </button>
 
       {/* Scorecard */}
       {showScorecard&&(
-        <div style={{background:"rgba(255,255,255,0.02)",borderRadius:16,padding:12,border:"1px solid rgba(255,255,255,0.03)"}}>
+        <div className="wz-scorecard-panel" style={{background:"rgba(255,255,255,0.02)",borderRadius:16,padding:12,border:"1px solid rgba(255,255,255,0.03)"}}>
           {/* Filter tabs */}
           <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap",justifyContent:"center"}}>
             {[{id:"all",label:"All"},{id:"upper",label:"Upper"},{id:"lower",label:"Lower"},{id:"needed",label:"Needed"},{id:"scored",label:"Scored"}].map(f=>(
@@ -1355,6 +1446,7 @@ export default function Wordtzee(){
           );})}
         </div>
       )}
+      </div>{/* end wz-game-layout */}
     </div>
   );
 }
